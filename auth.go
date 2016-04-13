@@ -31,7 +31,7 @@ func init() {
 		Path:     "/",
 		MaxAge:   86400,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   ssl,
 	}
 }
 

@@ -1,3 +1,0 @@
-[submodule "patternfly"]
-	path = patternfly
-	url = git@github.com:patternfly/patternfly.git

@@ -218,7 +218,7 @@ func Secrets(w http.ResponseWriter, r *http.Request) {
 	tmplVars := map[string]interface{}{
 		"Nav": navVars(r),
 		"Body": map[string]interface{}{
-			"PageLink":       "/secrets",
+			"PageLink":       "Secrets",
 			"PageName":       "Secrets",
 			"TableHeader":    tableHeader,
 			"TableContent":   tableContent,
@@ -280,7 +280,7 @@ func Keys(w http.ResponseWriter, r *http.Request) {
 	tmplVars := map[string]interface{}{
 		"Nav": navVars(r),
 		"Body": map[string]interface{}{
-			"PageLink":       "/keys",
+			"PageLink":       "Keys",
 			"PageName":       "Keys",
 			"TableHeader":    tableHeader,
 			"TableContent":   tableContent,

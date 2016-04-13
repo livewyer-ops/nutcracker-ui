@@ -16,6 +16,7 @@ var (
 	csrfWrapper       func(http.Handler) http.Handler
 	nutcrackerServer  string
 	csrfKey           string
+	listen            string
 	ssl               bool
 	tmpl              *template.Template
 	htmlDir           = "html/"
@@ -28,6 +29,7 @@ func init() {
 	flag.StringVar(&nutcrackerServer, "backend", "localhost:8443", "Nutcracker Backend")
 	flag.StringVar(&csrfKey, "csrf", "", "CSRF Token")
 	flag.BoolVar(&ssl, "secure", true, "Use this to disable TLS.  Do not use in production!")
+	flag.StringVar(&listen, "listen", "0.0.0.0:8443", "Listen address")
 	flag.Parse()
 
 	// Load base HTML templates at startup
@@ -70,12 +72,29 @@ func server() {
 	addRoutes(r)
 
 	server := new(http.Server)
-	server.Addr = "0.0.0.0:8080"
 	server.Handler = context.ClearHandler(csrfWrapper(r))
-	err := server.ListenAndServe()
-	if err != nil {
-		log.Error(err)
+
+	if ssl {
+
+		cert, err := GenCert()
+		sock, err := Socket(listen, cert)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = server.Serve(sock)
+		if err != nil {
+			log.Error(err)
+		}
+
+	} else {
+		server.Addr = listen
+		err := server.ListenAndServe()
+		if err != nil {
+			log.Error(err)
+		}
 	}
+
 }
 
 func main() {
