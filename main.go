@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"html/template"
+	"io/ioutil"
+	stdLog "log"
 	"net/http"
 	"time"
 
@@ -75,6 +77,9 @@ func server() {
 
 	server := new(http.Server)
 	server.Handler = context.ClearHandler(csrfWrapper(r))
+
+	server.ErrorLog = new(stdLog.Logger)
+	server.ErrorLog.SetOutput(ioutil.Discard)
 
 	if ssl {
 
