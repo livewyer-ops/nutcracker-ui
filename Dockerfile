@@ -1,7 +1,7 @@
 FROM scratch
 
-ADD assets /
-ADD html /
+ADD assets /assets
+ADD html /html
 ADD nutcracker-ui /
 
 CMD [ "/nutcracker-ui" ]
