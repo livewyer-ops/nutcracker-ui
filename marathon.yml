@@ -3,7 +3,6 @@ cpus: 0.1
 mem: 128.0
 instances: 1
 args: [ 
-    "/nutcracker-ui",
     "-backend",
     "{{nutcracker_server}}",
     "-key",
@@ -11,8 +10,7 @@ args: [
     ]
 container:
   docker:
-    image: registry.nutmeg.co.uk:8443/nutcracker-ui
-    forcePullImage: true
+    image: registry.nutmeg.co.uk:8443/nutcracker-ui:{{version}}
     portMappings:
       - containerPort: 8443
     parameters:
