@@ -24,7 +24,7 @@ type Creds struct {
 	Admin    bool `json:"-"`
 }
 
-type apiReq map[string]string
+type apiReq map[string]interface{}
 
 func newAPI(creds *Creds) *api {
 	return &api{
@@ -59,7 +59,7 @@ func (a *api) Get(path string) (response []byte, err error) {
 		return
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode > 299 {
 		err = errors.New("API Error: " + resp.Status)
 		return
 	}
@@ -99,7 +99,7 @@ func (a *api) Post(path string, data apiReq) (response []byte, err error) {
 		return
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode > 299 {
 		err = errors.New("API Error: " + resp.Status)
 		return
 	}

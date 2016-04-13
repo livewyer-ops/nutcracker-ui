@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/csrf"
@@ -14,10 +16,16 @@ import (
 	"github.com/nutmegdevelopment/nutcracker/secrets"
 )
 
-var re *regexp.Regexp
+var (
+	extRe     *regexp.Regexp
+	contentRe *regexp.Regexp
+	nameRe    *regexp.Regexp
+)
 
 func init() {
-	re = regexp.MustCompile(`\.([a-zA-Z0-9]+)$`)
+	extRe = regexp.MustCompile(`\.([a-zA-Z0-9]+)$`)
+	contentRe = regexp.MustCompile(`^([a-zA-Z0-9._\-=*!]+)$`)
+	nameRe = regexp.MustCompile(`^([0-9a-zA-Z_\-.])+$`)
 }
 
 // Assets serves static assets
@@ -52,7 +60,7 @@ func Assets(w http.ResponseWriter, r *http.Request) {
 
 	case "img":
 		// DetectContentType doesn't handle SVG properly, use extension:
-		if re.FindString(filePath) == ".svg" {
+		if extRe.FindString(filePath) == ".svg" {
 			contentType = "image/svg+xml"
 		} else {
 			contentType = http.DetectContentType(data)
@@ -132,6 +140,12 @@ func Home(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+
+		// Update metrics to show new state
+		err := metrics.update()
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	m := metrics.latest()
@@ -180,16 +194,17 @@ func Secrets(w http.ResponseWriter, r *http.Request) {
 	var tableHeader []string
 	var tableTitle string
 
+	url := "/secrets/list/secrets"
+
 	if r.Method == "POST" {
 
-		search := r.FormValue("search")
-		url := "/secrets/list/keys/" + search
+		search := strings.TrimSpace(r.FormValue("search"))
+		url += "/" + search
 		tableHeader, tableContent, err = keyTable(url, creds)
 		tableTitle = fmt.Sprintf("Keys with access to %s secret:", search)
 
 	} else {
 
-		url := "/secrets/list/secrets"
 		tableHeader, tableContent, err = secretTable(url, creds)
 		tableTitle = "All secrets"
 
@@ -215,9 +230,6 @@ func Secrets(w http.ResponseWriter, r *http.Request) {
 
 	if alert != nil {
 		tmplVars["Alert"] = alert
-		tmplVars["Body"].(map[string]interface{})["VaultSealed"] = true
-	} else {
-		tmplVars["Body"].(map[string]interface{})["VaultUnsealed"] = true
 	}
 
 	err = tmpl.ExecuteTemplate(w, "main.html", tmplVars)
@@ -244,16 +256,17 @@ func Keys(w http.ResponseWriter, r *http.Request) {
 	var tableHeader []string
 	var tableTitle string
 
+	url := "/secrets/list/keys"
+
 	if r.Method == "POST" {
 
-		search := r.FormValue("search")
-		url := "/secrets/list/secrets/" + search
+		search := strings.TrimSpace(r.FormValue("search"))
+		url += "/" + search
 		tableHeader, tableContent, err = secretTable(url, creds)
 		tableTitle = fmt.Sprintf("Secrets readable by %s key:", search)
 
 	} else {
 
-		url := "/secrets/list/keys"
 		tableHeader, tableContent, err = keyTable(url, creds)
 		tableTitle = "All keys"
 
@@ -279,9 +292,6 @@ func Keys(w http.ResponseWriter, r *http.Request) {
 
 	if alert != nil {
 		tmplVars["Alert"] = alert
-		tmplVars["Body"].(map[string]interface{})["VaultSealed"] = true
-	} else {
-		tmplVars["Body"].(map[string]interface{})["VaultUnsealed"] = true
 	}
 
 	err = tmpl.ExecuteTemplate(w, "main.html", tmplVars)
@@ -306,10 +316,37 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 
 	if !creds.Admin {
 		http.Error(w, "Only admin users are permitted to administrate nutcracker", 401)
+		return
 	}
 
 	m := metrics.latest()
 	alert := unsealAlert(m)
+
+	if r.Method == "POST" {
+
+		switch r.FormValue("inputtype") {
+
+		case "addsecret":
+			alert, err = addSecret(r, creds)
+
+		case "sharesecret":
+			alert, err = shareSecret(r, creds)
+
+		case "updatesecret":
+			alert, err = updateSecret(r, creds)
+
+		case "addkey":
+			alert, err = addKey(r, creds)
+
+		default:
+			http.Error(w, "Bad input", 400)
+			return
+		}
+
+	}
+	if err != nil {
+		log.Error(err)
+	}
 
 	tmpl.New("body").ParseFiles(htmlDir + "/content/admin.html")
 
@@ -322,9 +359,6 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 
 	if alert != nil {
 		tmplVars["Alert"] = alert
-		tmplVars["Body"].(map[string]interface{})["VaultSealed"] = true
-	} else {
-		tmplVars["Body"].(map[string]interface{})["VaultUnsealed"] = true
 	}
 
 	err = tmpl.ExecuteTemplate(w, "main.html", tmplVars)
@@ -422,5 +456,127 @@ func keyTable(url string, c *Creds) (tableHeader []string, tableContent map[stri
 		}
 		tableContent[list[i].Name] = []interface{}{keyType}
 	}
+	return
+}
+
+func addSecret(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+
+	alert = make(map[string]string)
+	reqBody := make(map[string]interface{})
+
+	if !nameRe.MatchString(r.FormValue("name")) {
+		alert["AlertContent"] = "Invalid name"
+		return
+	}
+
+	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
+
+	msg := r.FormValue("message")
+
+	if contentRe.MatchString(msg) {
+		reqBody["message"] = msg
+	} else {
+		// Message with special chars/newlines/etc
+		reqBody["message"] = fmt.Sprintf("$base64$%s",
+			base64.StdEncoding.EncodeToString([]byte(msg)),
+		)
+	}
+
+	_, err = newAPI(creds).Post("/secrets/message", reqBody)
+	if err != nil {
+		alert["AlertContent"] = "Failed to create secret"
+	} else {
+		alert["AlertContent"] = fmt.Sprintf("Created secret %s", reqBody["name"])
+	}
+
+	return
+}
+
+func shareSecret(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+
+	alert = make(map[string]string)
+	reqBody := make(map[string]interface{})
+
+	if !nameRe.MatchString(r.FormValue("name")) {
+		alert["AlertContent"] = "Invalid name"
+		return
+	}
+
+	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
+	reqBody["keyid"] = strings.TrimSpace(r.FormValue("key"))
+
+	_, err = newAPI(creds).Post("/secrets/share", reqBody)
+	if err != nil {
+		alert["AlertContent"] = "Failed to share secret"
+	} else {
+		alert["AlertContent"] = fmt.Sprintf("Shared secret %s with key %s", reqBody["name"], reqBody["keyid"])
+	}
+
+	return
+}
+
+func updateSecret(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+
+	alert = make(map[string]string)
+	reqBody := make(map[string]interface{})
+
+	if !nameRe.MatchString(r.FormValue("name")) {
+		alert["AlertContent"] = "Invalid name"
+		return
+	}
+
+	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
+
+	msg := r.FormValue("message")
+
+	if contentRe.MatchString(msg) {
+		reqBody["message"] = msg
+	} else {
+		// Message with special chars/newlines/etc
+		reqBody["message"] = fmt.Sprintf("$base64$%s",
+			base64.StdEncoding.EncodeToString([]byte(msg)),
+		)
+	}
+
+	_, err = newAPI(creds).Post("/secrets/update", reqBody)
+	if err != nil {
+		alert["AlertContent"] = "Failed to update secret"
+	} else {
+		alert["AlertContent"] = fmt.Sprintf("Updated secret %s", reqBody["name"])
+	}
+
+	return
+}
+
+func addKey(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+
+	alert = make(map[string]string)
+	reqBody := make(map[string]interface{})
+
+	if !nameRe.MatchString(r.FormValue("name")) {
+		alert["AlertContent"] = "Invalid name"
+		return
+	}
+
+	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
+
+	if r.FormValue("admin") == "true" {
+		reqBody["admin"] = true
+	}
+
+	resp, err := newAPI(creds).Post("/secrets/key", reqBody)
+	if err != nil {
+		alert["AlertContent"] = "Failed to create key"
+		return
+	}
+
+	result := make(map[string]interface{})
+	err = json.Unmarshal(resp, &result)
+	if err != nil {
+		alert["AlertContent"] = "Failed to read response"
+		return
+	}
+
+	alert["AlertContent"] = fmt.Sprintf("Created key %s.\n\nsecret: %s", reqBody["name"], result["Key"])
 	return
 }

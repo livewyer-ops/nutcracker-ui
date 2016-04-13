@@ -26,7 +26,8 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <div class="col-md-6 col-md-offset-4" <input type="hidden" name="inputtype" value="addsecret">
+                            <div class="col-md-6 col-md-offset-4">
+                                <input type="hidden" name="inputtype" value="addsecret">
                                 <button class="btn btn-primary" type="submit">Submit</button>
                             </div>
                         </div>
@@ -50,7 +51,34 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <div class="col-md-6 col-md-offset-4" <input type="hidden" name="inputtype" value="sharesecret">
+                                <div class="col-md-6 col-md-offset-4">
+                                    <input type="hidden" name="inputtype" value="sharesecret">
+                                    <button class="btn btn-primary" type="submit">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Update a secret</h4>
+                        <form class="form-horizontal" method="post">
+                            {{ .csrfField }}
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="textInput-markup">Secret name</label>
+                                <div class="col-md-6">
+                                    <input type="text" id="textInput-markup" name="name" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="textInput-markup">Secret message</label>
+                                <div class="col-md-6">
+                                    <textarea class="form-control" id="messageArea" name="message" placeholder="Type in your new secret" rows="5"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-6 col-md-offset-4">
+                                    <input type="hidden" name="inputtype" value="updatesecret">
                                     <button class="btn btn-primary" type="submit">Submit</button>
                                 </div>
                             </div>
@@ -74,7 +102,22 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <div class="col-md-6 col-md-offset-4" <input type="hidden" name="inputtype" value="addkey">
+                            <div class="col-md-6 col-md-offset-4">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="admin" id="optionsRadios1" value="false" checked=""> Read-only key
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="admin" id="optionsRadios2" value="true"> Admin key
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-6 col-md-offset-4">
+                                <input type="hidden" name="inputtype" value="addkey">
                                 <button class="btn btn-primary" type="submit">Submit</button>
                             </div>
                         </div>
