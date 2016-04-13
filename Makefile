@@ -7,7 +7,7 @@ DOCKERREPO ?= localhost
 
 install:
 	$(DOCKER) run -v $(CURDIR)\:/go/bin -e CGO_ENABLED=0 --rm golang\:$(GO_VERSION) go get -v github.com/nutmegdevelopment/nutcracker-ui
-	$(DOCKER) build -t $(DOCKERTAG) .
+	$(DOCKER) build -t $(DOCKERREPO)/$(DOCKERTAG) .
 	rm -f nutcracker-ui
 
 push:

@@ -2,7 +2,13 @@ id: /nutcracker-ui
 cpus: 0.1
 mem: 128.0
 instances: 1
-cmd: /nutcracker-ui -backend {{nutcracker_server}} -key {{nutcracker_key}}
+args: [ 
+    "/nutcracker-ui",
+    "-backend",
+    "{{nutcracker_server}}",
+    "-key",
+    "{{nutcracker_key}}"
+    ]
 container:
   docker:
     image: registry.nutmeg.co.uk:8443/nutcracker-ui
