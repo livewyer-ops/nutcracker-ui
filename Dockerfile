@@ -1,11 +1,7 @@
-FROM golang:1.6
+FROM scratch
 
-ENV GOPATH /go
+ADD assets /
+ADD html /
+ADD nutcracker-ui /
 
-VOLUME deploy /output
-
-COPY . /go/src/github.com/nutmegdevelopment/nutcracker-ui
-
-RUN cd /go/src/github.com/nutmegdevelopment/nutcracker-ui && go get -d
-
-RUN cd /go/src/github.com/nutmegdevelopment/nutcracker-ui && go build -o /output/nutcracker-ui
+CMD [ "/nutcracker-ui" ]
