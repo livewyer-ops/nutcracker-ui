@@ -1,0 +1,25 @@
+id: /nutcracker-ui
+cpus: 0.1
+mem: 128.0
+instances: 1
+cmd: /nutcracker-ui -backend {{nutcracker_server}} -key {{nutcracker_key}}
+container:
+  docker:
+    image: registry.nutmeg.co.uk:8443/nutcracker-ui
+    forcePullImage: true
+    portMappings:
+      - containerPort: 8443
+    parameters:
+      - 
+        key: label
+        value: APP_NAME=nutcracker-ui
+healthChecks:
+  -
+    protocol: TCP
+    portIndex: 0
+    gracePeriodSeconds: 600
+    intervalSeconds: 15
+    timeoutSeconds: 5
+    maxConsecutiveFailures: 10
+labels:
+  tags: internal

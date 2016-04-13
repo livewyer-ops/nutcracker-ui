@@ -13,21 +13,23 @@ import (
 )
 
 var (
-	csrfWrapper       func(http.Handler) http.Handler
-	nutcrackerServer  string
-	csrfKey           string
-	listen            string
-	ssl               bool
-	tmpl              *template.Template
-	htmlDir           = "html/"
-	assetsDir         = "assets/"
-	metrics           *Metrics
-	metricRefreshRate = 30 * time.Second
+	csrfWrapper        func(http.Handler) http.Handler
+	nutcrackerServer   string
+	nutcrackerKey      string
+	listen             string
+	ssl                bool
+	tmpl               *template.Template
+	htmlDir            = "html/"
+	assetsDir          = "assets/"
+	nutcrackerUser     = "nutcracker-ui"
+	nutcrackerCSRFName = "nutcracker-ui-csrf"
+	metrics            *Metrics
+	metricRefreshRate  = 30 * time.Second
 )
 
 func init() {
 	flag.StringVar(&nutcrackerServer, "backend", "localhost:8443", "Nutcracker Backend")
-	flag.StringVar(&csrfKey, "csrf", "", "CSRF Token")
+	flag.StringVar(&nutcrackerKey, "key", "", "Nutcracker key")
 	flag.BoolVar(&ssl, "secure", true, "Use this to disable TLS.  Do not use in production!")
 	flag.StringVar(&listen, "listen", "0.0.0.0:8443", "Listen address")
 	flag.Parse()
@@ -98,7 +100,18 @@ func server() {
 }
 
 func main() {
-	csrfWrapper = csrf.Protect([]byte("csrfKey"), csrf.Secure(ssl))
+
+	serverCreds := &Creds{
+		Username: nutcrackerUser,
+		Password: nutcrackerKey,
+	}
+
+	resp, err := newAPI(serverCreds).Post("/secrets/view", apiReq{"name": nutcrackerCSRFName})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	csrfWrapper = csrf.Protect(resp, csrf.Secure(ssl))
 
 	server()
 }
