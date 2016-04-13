@@ -1,0 +1,56 @@
+{{define "body"}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <ol class="breadcrumb">
+                <li><a href="#">Home</a></li>
+                <li>{{.PageLink}}</li>
+            </ol>
+            <h1>{{.PageName}}</h1>{{if .SearchText}}
+            <div>
+                <form class="form-horizontal" method="post">
+                    {{ .csrfField }}
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="textInput-markup">{{.SearchText}}</label>
+                        <div class="col-sm-2">
+                            <input type="text" id="textInput-markup" name="search" class="form-control">
+                        </div>
+                        <button class="btn btn-default" type="submit">Submit</button>
+                    </div>
+                </form>
+                {{end}}
+            </div>
+            <h2 class="h4">{{.TableTitle}}</h2>
+            <table class="datatable table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        {{range $cat := .TableHeader}}
+                        <th>{{$cat}}</th>
+                        {{end}}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $name, $data := .TableContent}}
+                    <tr>
+                        <td>{{$name}}</td>
+                        {{range $d := $data}}
+                        <td>{{$d}}</td>
+                        {{end}}
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        <!-- /col -->
+    </div>
+    <!-- /row -->
+</div>
+<!-- /container -->
+<script>
+    // Initialize Datatables
+$(document).ready( function() {
+$('.datatable').dataTable();
+});
+
+</script>
+{{end}}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9 {{.PageClass}}"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us" class={{.PageClass}}>
+    <!--<![endif]-->
+    <head>
+        <title>{{.Title}}</title>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/css/patternfly.css" >
+        <link rel="stylesheet" href="/css/patternfly-additions.css" >
+        <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.3/js/bootstrap-select.min.js"></script>
+        <script src="/js/patternfly.min.js"></script>
+    </head>
+    {{ template "alert" .Alert }}
+    <body>
+        {{ template "nav" .Nav }}
+        {{ template "body" .Body }}
+    </body>
+</html>

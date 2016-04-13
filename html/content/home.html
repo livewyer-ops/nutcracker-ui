@@ -1,0 +1,94 @@
+{{define "body"}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-8 col-md-9">
+            <ol class="breadcrumb">
+                <li><a href="#">Home</a></li>
+                <li>{{.PageLink}}</li>
+            </ol>
+            <div class="page-header page-header-bleed-right">
+                <div class="actions pull-right">
+                    <a href="#"><span class="pficon pficon-refresh"></span> Refresh Results</a>
+                </div>
+                <h1>Dashboard</h1>
+            </div>
+            <h2 class="h4">Server status</h2>
+            <div class="row">
+                <div class="col-sm-6">
+                    <table class="table">
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Secrets</strong>
+                                <td><span class="label label-default">{{.SecretCount}}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Keys</strong>
+                                <td><span class="label label-default">{{.KeyCount}}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Secret Views</strong>
+                                <td><span class="label label-default">{{.ViewCount}}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Vault status</strong> {{if .VaultSealed}}
+                                <td><span class="label label-default">Sealed</span></td>
+                                {{end}} {{if .VaultUnsealed}}
+                                <td><span class="label label-success">Unsealed</span></td>
+                                {{end}}
+                        </tr>
+                    </table>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        {{if .VaultSealed}}
+                        <p>
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#unsealModal">Unseal vault</button>
+                            <div class="modal fade" id="unsealModal" tabindex="-1" role="dialog" aria-labelledby="unsealModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                                <span class="pficon pficon-close"></span>
+                                            </button>
+                                            <h4 class="modal-title" id="unsealModalLabel">Enter credentials</h4>
+                                        </div>
+                                        <form class="form-horizontal" method="post" id="unseal">
+                                            <div class="modal-body">
+
+                                                {{ .csrfField }}
+                                                <div class="form-group">
+                                                    <label class="col-sm-3 control-label" for="textInput-modal-markup">Master key</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="password" id="masterKey" name="unseal" class="form-control">
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Submit</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}} {{if .VaultUnsealed}}
+                            <form method="post" id="seal">
+                                {{ .csrfField }}
+                                <input type="hidden" name="seal" value="1">
+                                <button class="btn btn-danger" type="submit">Seal vault</button>
+                            </form>
+                            {{end}}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- /col -->
+        </div>
+        <!-- /row -->
+    </div>
+    <!-- /container -->
+    {{end}}
