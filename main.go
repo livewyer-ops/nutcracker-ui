@@ -38,7 +38,7 @@ func init() {
 	tmpl = template.New("main")
 	_, err := tmpl.ParseGlob(htmlDir + "*.html")
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	metrics = new(Metrics)
@@ -84,17 +84,11 @@ func server() {
 			log.Fatal(err)
 		}
 
-		err = server.Serve(sock)
-		if err != nil {
-			log.Error(err)
-		}
+		server.Serve(sock)
 
 	} else {
 		server.Addr = listen
-		err := server.ListenAndServe()
-		if err != nil {
-			log.Error(err)
-		}
+		server.ListenAndServe()
 	}
 
 }
