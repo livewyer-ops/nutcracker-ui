@@ -137,9 +137,9 @@ func (m *Metrics) update() (err error) {
 	if err != nil {
 		return
 	}
-    
-    // Set the metric retrieval time
-    point.date = time.Now()
+
+	// Set the metric retrieval time
+	point.date = time.Now()
 
 	m.history = append(m.history, point)
 	return

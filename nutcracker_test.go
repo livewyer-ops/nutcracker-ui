@@ -14,14 +14,14 @@ func echoServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqBody, _ := ioutil.ReadAll(r.Body)
 		r.Body.Close()
-        if r.Header.Get("X-Secret-ID") != "testid" {
-            w.WriteHeader(401)
-            return
-        }
-        if r.Header.Get("X-Secret-Key") != "testkey" {
-            w.WriteHeader(401)
-            return
-        }
+		if r.Header.Get("X-Secret-ID") != "testid" {
+			w.WriteHeader(401)
+			return
+		}
+		if r.Header.Get("X-Secret-Key") != "testkey" {
+			w.WriteHeader(401)
+			return
+		}
 		for key, value := range r.Header {
 			for i := range value {
 				w.Header().Add(key, value[i])
@@ -39,8 +39,8 @@ func TestAPI(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(t, err)
 	nutcrackerServer = u.Host
-    
-    a := newAPI(nil)
+
+	a := newAPI(nil)
 	a.url.Scheme = "http"
 
 	_, err = a.Get("test/url")
