@@ -72,7 +72,10 @@ func server() {
 	server := new(http.Server)
 	server.Addr = "0.0.0.0:8080"
 	server.Handler = context.ClearHandler(csrfWrapper(r))
-	log.Println(server.ListenAndServe())
+	err := server.ListenAndServe()
+	if err != nil {
+		log.Error(err)
+	}
 }
 
 func main() {
