@@ -1,4 +1,4 @@
-package main
+package nutcracker
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -38,15 +38,14 @@ func TestAPI(t *testing.T) {
 
 	u, err := url.Parse(ts.URL)
 	assert.NoError(t, err)
-	nutcrackerServer = u.Host
 
-	a := newAPI(nil)
+	a := newAPI(nil, u.Host)
 	a.url.Scheme = "http"
 
 	_, err = a.Get("test/url")
 	assert.EqualError(t, err, "API Error: 401 Unauthorized")
 
-	a = newAPI(&Creds{Username: "testid", Password: "testkey"})
+	a = newAPI(&Creds{Username: "testid", Password: "testkey"}, u.Host)
 	a.url.Scheme = "http"
 
 	_, err = a.Get("test/url")

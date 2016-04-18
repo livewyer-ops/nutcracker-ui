@@ -1,4 +1,4 @@
-package main
+package nutcracker
 
 import (
 	"crypto/tls"
@@ -12,31 +12,48 @@ import (
 	"time"
 )
 
-type api struct {
+// API represents a nutcracker API
+type API struct {
 	url   url.URL
 	req   *http.Request
 	creds *Creds
 }
 
+// Creds is an interface to send credentials
 type Creds struct {
 	Username string
 	Password string
 	Admin    bool `json:"-"`
 }
 
-type apiReq map[string]interface{}
+// APIReq is a convenient way of passing a request
+type APIReq map[string]interface{}
 
-func newAPI(creds *Creds) *api {
-	return &api{
+//NewAPIReq returns a new APIReq
+func NewAPIReq() APIReq {
+	return make(APIReq)
+}
+
+// Set sets a value in a request.
+func (a APIReq) Set(key string, value interface{}) APIReq {
+	a[key] = value
+	return a
+}
+
+// NewAPI returns a new nutcracker API.  If creds are nil, an unauthenticated
+// request will be made.
+func NewAPI(creds *Creds, server string) *API {
+	return &API{
 		url: url.URL{
-			Host:   nutcrackerServer,
+			Host:   server,
 			Scheme: "https",
 		},
 		creds: creds,
 	}
 }
 
-func (a *api) Get(path string) (response []byte, err error) {
+// Get sents a GET request
+func (a *API) Get(path string) (response []byte, err error) {
 	a.url.Path = path
 
 	req, err := http.NewRequest("GET", a.url.String(), nil)
@@ -69,7 +86,8 @@ func (a *api) Get(path string) (response []byte, err error) {
 	return
 }
 
-func (a *api) Post(path string, data apiReq) (response []byte, err error) {
+// Post sends a POST request
+func (a *API) Post(path string, data APIReq) (response []byte, err error) {
 	a.url.Path = path
 
 	pr, pw := io.Pipe()
@@ -120,13 +138,22 @@ type MetricVal struct {
 type Metrics struct {
 	sync.Mutex
 	history []MetricVal
+	client  *API
 }
 
-func (m *Metrics) update() (err error) {
+// NewMetrics creates a new metric poller
+func NewMetrics(server string) (m *Metrics) {
+	m = new(Metrics)
+	m.client = NewAPI(nil, server)
+	return
+}
+
+// Update updates the metric data from the server
+func (m *Metrics) Update() (err error) {
 	m.Lock()
 	defer m.Unlock()
 
-	data, err := newAPI(nil).Get("/metrics")
+	data, err := m.client.Get("/metrics")
 	if err != nil {
 		return
 	}
@@ -145,6 +172,7 @@ func (m *Metrics) update() (err error) {
 	return
 }
 
-func (m *Metrics) latest() MetricVal {
+// Latest returns the latest metric data set
+func (m *Metrics) Latest() MetricVal {
 	return m.history[len(m.history)-1]
 }

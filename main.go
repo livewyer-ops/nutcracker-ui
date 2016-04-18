@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
+	"github.com/nutmegdevelopment/nutcracker-ui/nutcracker"
 )
 
 var (
@@ -25,7 +26,7 @@ var (
 	assetsDir          = "assets/"
 	nutcrackerUser     = "nutcracker-ui"
 	nutcrackerCSRFName = "nutcracker-ui-csrf"
-	metrics            *Metrics
+	metrics            *nutcracker.Metrics
 	metricRefreshRate  = 30 * time.Second
 )
 
@@ -43,13 +44,13 @@ func init() {
 		panic(err.Error())
 	}
 
-	metrics = new(Metrics)
+	metrics = nutcracker.NewMetrics(nutcrackerServer)
 }
 
 func updateMetrics() {
 	for {
 
-		err := metrics.update()
+		err := metrics.Update()
 		if err != nil {
 			log.Error("Metric update error: ", err)
 		}
@@ -100,12 +101,18 @@ func server() {
 
 func main() {
 
-	serverCreds := &Creds{
+	serverCreds := &nutcracker.Creds{
 		Username: nutcrackerUser,
 		Password: nutcrackerKey,
 	}
 
-	resp, err := newAPI(serverCreds).Post("/secrets/view", apiReq{"name": nutcrackerCSRFName})
+	resp, err := nutcracker.NewAPI(
+		serverCreds,
+		nutcrackerServer).Post(
+		"/secrets/view",
+		nutcracker.NewAPIReq().Set(
+			"name",
+			nutcrackerCSRFName))
 	if err != nil {
 		log.Fatal(err)
 	}

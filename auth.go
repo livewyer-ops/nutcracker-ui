@@ -10,6 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
+	"github.com/nutmegdevelopment/nutcracker-ui/nutcracker"
 )
 
 var (
@@ -68,10 +69,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func doAuth(w http.ResponseWriter, r *http.Request) bool {
-	c := new(Creds)
+	c := new(nutcracker.Creds)
 	c.Username = r.FormValue("username")
 	c.Password = r.FormValue("password")
-	data, err := newAPI(c).Get("/auth")
+	data, err := nutcracker.NewAPI(c, nutcrackerServer).Get("/auth")
 	if err != nil {
 		return false
 	}
@@ -123,7 +124,7 @@ func Auth(w http.ResponseWriter, r *http.Request) bool {
 }
 
 // GetCreds returns the credentials for the current session
-func GetCreds(r *http.Request) (c *Creds, err error) {
+func GetCreds(r *http.Request) (c *nutcracker.Creds, err error) {
 	s, err := session.Get(r, "id")
 	if err != nil {
 		return
@@ -138,7 +139,7 @@ func GetCreds(r *http.Request) (c *Creds, err error) {
 		return
 	}
 
-	c = new(Creds)
+	c = new(nutcracker.Creds)
 	c.Username = s.Values["name"].(string)
 	c.Password = s.Values["pass"].(string)
 	c.Admin = s.Values["admin"].(bool)

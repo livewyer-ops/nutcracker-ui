@@ -13,6 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
+	"github.com/nutmegdevelopment/nutcracker-ui/nutcracker"
 	"github.com/nutmegdevelopment/nutcracker/secrets"
 )
 
@@ -122,7 +123,7 @@ func Home(w http.ResponseWriter, r *http.Request) {
 		switch {
 
 		case r.FormValue("seal") == "1":
-			_, err := newAPI(nil).Get("/seal")
+			_, err := nutcracker.NewAPI(nil, nutcrackerServer).Get("/seal")
 			if err != nil {
 				log.Error(err)
 				http.Error(w, "Nutcracker request error", 500)
@@ -130,10 +131,11 @@ func Home(w http.ResponseWriter, r *http.Request) {
 			}
 
 		case len(master) > 1:
-			_, err := newAPI(&Creds{
+			_, err := nutcracker.NewAPI(&nutcracker.Creds{
 				Username: "master",
 				Password: master,
-			}).Get("/unseal")
+			},
+				nutcrackerServer).Get("/unseal")
 			if err != nil {
 				log.Error(err)
 				http.Error(w, "Nutcracker request error", 500)
@@ -142,13 +144,13 @@ func Home(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update metrics to show new state
-		err := metrics.update()
+		err := metrics.Update()
 		if err != nil {
 			log.Error(err)
 		}
 	}
 
-	m := metrics.latest()
+	m := metrics.Latest()
 	alert := unsealAlert(m)
 
 	tmpl.New("body").ParseFiles(htmlDir + "/content/home.html")
@@ -210,7 +212,7 @@ func Secrets(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	m := metrics.latest()
+	m := metrics.Latest()
 	alert := unsealAlert(m)
 
 	tmpl.New("body").ParseFiles(htmlDir + "/content/table.html")
@@ -272,7 +274,7 @@ func Keys(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	m := metrics.latest()
+	m := metrics.Latest()
 	alert := unsealAlert(m)
 
 	tmpl.New("body").ParseFiles(htmlDir + "/content/table.html")
@@ -319,7 +321,7 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := metrics.latest()
+	m := metrics.Latest()
 	alert := unsealAlert(m)
 
 	if r.Method == "POST" {
@@ -368,7 +370,7 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func unsealAlert(m MetricVal) map[string]string {
+func unsealAlert(m nutcracker.MetricVal) map[string]string {
 	if m.Sealed {
 		return map[string]string{
 			"AlertContent": "Vault is sealed, please unseal before making changes",
@@ -377,8 +379,8 @@ func unsealAlert(m MetricVal) map[string]string {
 	return nil
 }
 
-func secretTable(url string, c *Creds) (tableHeader []string, tableContent map[string][]interface{}, err error) {
-	data, err := newAPI(c).Get(url)
+func secretTable(url string, c *nutcracker.Creds) (tableHeader []string, tableContent map[string][]interface{}, err error) {
+	data, err := nutcracker.NewAPI(c, nutcrackerServer).Get(url)
 	if err != nil {
 		log.Error(err)
 		return
@@ -418,8 +420,8 @@ func secretTable(url string, c *Creds) (tableHeader []string, tableContent map[s
 	return
 }
 
-func keyTable(url string, c *Creds) (tableHeader []string, tableContent map[string][]interface{}, err error) {
-	data, err := newAPI(c).Get(url)
+func keyTable(url string, c *nutcracker.Creds) (tableHeader []string, tableContent map[string][]interface{}, err error) {
+	data, err := nutcracker.NewAPI(c, nutcrackerServer).Get(url)
 	if err != nil {
 		log.Error(err)
 		return
@@ -459,17 +461,17 @@ func keyTable(url string, c *Creds) (tableHeader []string, tableContent map[stri
 	return
 }
 
-func addSecret(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+func addSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
 
 	alert = make(map[string]string)
-	reqBody := make(map[string]interface{})
+	reqBody := nutcracker.NewAPIReq()
 
 	if !nameRe.MatchString(r.FormValue("name")) {
 		alert["AlertContent"] = "Invalid name"
 		return
 	}
 
-	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
+	reqBody.Set("name", strings.TrimSpace(r.FormValue("name")))
 
 	msg := r.FormValue("message")
 
@@ -477,12 +479,12 @@ func addSecret(r *http.Request, creds *Creds) (alert map[string]string, err erro
 		reqBody["message"] = msg
 	} else {
 		// Message with special chars/newlines/etc
-		reqBody["message"] = fmt.Sprintf("$base64$%s",
+		reqBody.Set("message", fmt.Sprintf("$base64$%s",
 			base64.StdEncoding.EncodeToString([]byte(msg)),
-		)
+		))
 	}
 
-	_, err = newAPI(creds).Post("/secrets/message", reqBody)
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/message", reqBody)
 	if err != nil {
 		alert["AlertContent"] = "Failed to create secret"
 	} else {
@@ -492,7 +494,7 @@ func addSecret(r *http.Request, creds *Creds) (alert map[string]string, err erro
 	return
 }
 
-func shareSecret(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+func shareSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
 
 	alert = make(map[string]string)
 	reqBody := make(map[string]interface{})
@@ -505,7 +507,7 @@ func shareSecret(r *http.Request, creds *Creds) (alert map[string]string, err er
 	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
 	reqBody["keyid"] = strings.TrimSpace(r.FormValue("key"))
 
-	_, err = newAPI(creds).Post("/secrets/share", reqBody)
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/share", reqBody)
 	if err != nil {
 		alert["AlertContent"] = "Failed to share secret"
 	} else {
@@ -515,17 +517,17 @@ func shareSecret(r *http.Request, creds *Creds) (alert map[string]string, err er
 	return
 }
 
-func updateSecret(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+func updateSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
 
 	alert = make(map[string]string)
-	reqBody := make(map[string]interface{})
+	reqBody := nutcracker.NewAPIReq()
 
 	if !nameRe.MatchString(r.FormValue("name")) {
 		alert["AlertContent"] = "Invalid name"
 		return
 	}
 
-	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
+	reqBody.Set("name", strings.TrimSpace(r.FormValue("name")))
 
 	msg := r.FormValue("message")
 
@@ -533,12 +535,12 @@ func updateSecret(r *http.Request, creds *Creds) (alert map[string]string, err e
 		reqBody["message"] = msg
 	} else {
 		// Message with special chars/newlines/etc
-		reqBody["message"] = fmt.Sprintf("$base64$%s",
+		reqBody.Set("message", fmt.Sprintf("$base64$%s",
 			base64.StdEncoding.EncodeToString([]byte(msg)),
-		)
+		))
 	}
 
-	_, err = newAPI(creds).Post("/secrets/update", reqBody)
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/update", reqBody)
 	if err != nil {
 		alert["AlertContent"] = "Failed to update secret"
 	} else {
@@ -548,23 +550,23 @@ func updateSecret(r *http.Request, creds *Creds) (alert map[string]string, err e
 	return
 }
 
-func addKey(r *http.Request, creds *Creds) (alert map[string]string, err error) {
+func addKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
 
 	alert = make(map[string]string)
-	reqBody := make(map[string]interface{})
+	reqBody := nutcracker.NewAPIReq()
 
 	if !nameRe.MatchString(r.FormValue("name")) {
 		alert["AlertContent"] = "Invalid name"
 		return
 	}
 
-	reqBody["name"] = strings.TrimSpace(r.FormValue("name"))
+	reqBody.Set("name", strings.TrimSpace(r.FormValue("name")))
 
 	if r.FormValue("admin") == "true" {
 		reqBody["admin"] = true
 	}
 
-	resp, err := newAPI(creds).Post("/secrets/key", reqBody)
+	resp, err := nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/key", reqBody)
 	if err != nil {
 		alert["AlertContent"] = "Failed to create key"
 		return
