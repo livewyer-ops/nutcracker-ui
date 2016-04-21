@@ -121,7 +121,7 @@ func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 	return nil, errors.New("crypto/tls: failed to parse private key")
 }
 
-func getNutcrackerCert(api *nutcracker.API) (cert tls.Certificate, err error) {
+func GetNutcrackerCert(api *nutcracker.API) (cert tls.Certificate, err error) {
 	buf, err := api.Post("/secrets/view", nutcracker.NewAPIReq().Set("name", nutcrackerCertName))
 	if err != nil {
 		return

@@ -115,7 +115,7 @@ func main() {
 			// Use a self-signed cert
 			cert, err = GenCert()
 		} else {
-			cert, err = getNutcrackerCert(api)
+			cert, err = GetNutcrackerCert(api)
 		}
 		if err != nil {
 			log.Fatal(err)
