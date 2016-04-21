@@ -1,4 +1,4 @@
-package nutcracker
+package nutcracker // import "github.com/nutmegdevelopment/nutcracker-ui/nutcracker"
 
 import (
 	"crypto/tls"
