@@ -28,4 +28,4 @@ healthChecks:
     timeoutSeconds: 5
     maxConsecutiveFailures: 10
 labels:
-  tags: internal
+  tags: "internal,haproxy-tcp"
