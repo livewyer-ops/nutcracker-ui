@@ -6,7 +6,9 @@ args: [
     "-backend",
     "{{nutcracker_server}}",
     "-key",
-    "{{nutcracker_key}}"
+    "{{nutcracker_key}}",
+    "-cert",
+    "{{nutcracker_cert}}"
     ]
 container:
   docker:
