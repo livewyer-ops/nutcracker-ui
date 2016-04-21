@@ -89,8 +89,6 @@ func getNutcrackerCert(api *nutcracker.API) (cert tls.Certificate, err error) {
 
 	decoded = decoded[:n]
 
-	var certList [][]byte
-
 	for len(decoded) > 0 {
 		var block *pem.Block
 		block, decoded = pem.Decode(decoded)
@@ -99,24 +97,14 @@ func getNutcrackerCert(api *nutcracker.API) (cert tls.Certificate, err error) {
 		}
 
 		if block.Type == "CERTIFICATE" {
-			// letsencrypt returns the bundle in the wrong order.
-			// make a list and reverse it.
-			certList = append(certList, block.Bytes)
-
+			cert.Certificate = append(cert.Certificate, block.Bytes)
 		}
 
 		if block.Type == "PRIVATE KEY" {
-
 			cert.PrivateKey, err = parsePrivateKey(block.Bytes)
 			if err != nil {
 				continue
 			}
-
-		}
-
-		// Reverse the list
-		for i := len(certList) - 1; i >= 0; i-- {
-			cert.Certificate = append(cert.Certificate, certList[i])
 		}
 
 	}
