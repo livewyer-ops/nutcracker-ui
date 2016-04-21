@@ -1,17 +1,23 @@
 package main // import "github.com/nutmegdevelopment/nutcracker-ui"
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"math/big"
 	"net"
+	"strings"
 	"time"
+
+	"github.com/nutmegdevelopment/nutcracker-ui/nutcracker"
 )
 
 var ciphers = []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256}
@@ -89,10 +95,62 @@ func Socket(address string, cert tls.Certificate) (socket net.Listener, err erro
 		SessionTicketsDisabled:   false,
 		ClientAuth:               tls.NoClientCert,
 		PreferServerCipherSuites: true,
+		Certificates:             []tls.Certificate{cert},
 	}
 
-	cfg.Certificates = make([]tls.Certificate, 1)
-	cfg.Certificates[0] = cert
-
 	return tls.Listen("tcp", address, cfg)
+}
+
+// Taken from crypto/x509
+func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
+	if key, err := x509.ParsePKCS1PrivateKey(der); err == nil {
+		return key, nil
+	}
+	if key, err := x509.ParsePKCS8PrivateKey(der); err == nil {
+		switch key := key.(type) {
+		case *rsa.PrivateKey, *ecdsa.PrivateKey:
+			return key, nil
+		default:
+			return nil, errors.New("crypto/tls: found unknown private key type in PKCS#8 wrapping")
+		}
+	}
+	if key, err := x509.ParseECPrivateKey(der); err == nil {
+		return key, nil
+	}
+
+	return nil, errors.New("crypto/tls: failed to parse private key")
+}
+
+func getNutcrackerCert(api *nutcracker.API) (cert tls.Certificate, err error) {
+	buf, err := api.Post("/secrets/view", nutcracker.NewAPIReq().Set("name", nutcrackerCertName))
+	if err != nil {
+		return
+	}
+	decoded := make([]byte, base64.StdEncoding.DecodedLen(len(buf)-8))
+	n, err := base64.StdEncoding.Decode(decoded, buf[8:])
+
+	decoded = decoded[:n]
+
+	for len(decoded) > 0 {
+		var block *pem.Block
+		block, decoded = pem.Decode(decoded)
+		if block == nil {
+			break
+		}
+
+		if block.Type == "CERTIFICATE" {
+			cert.Certificate = append(cert.Certificate, block.Bytes)
+		}
+
+		if block.Type == "PRIVATE KEY" || strings.HasSuffix(block.Type, " PRIVATE KEY") {
+			cert.PrivateKey, err = parsePrivateKey(block.Bytes)
+			if err != nil {
+				continue
+			}
+		}
+
+	}
+
+	return
+
 }

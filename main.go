@@ -1,14 +1,7 @@
 package main // import "github.com/nutmegdevelopment/nutcracker-ui"
 
 import (
-	"crypto"
-	"crypto/ecdsa"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/pem"
-	"errors"
 	"flag"
 	"html/template"
 	"io/ioutil"
@@ -77,60 +70,6 @@ func addRoutes(r *mux.Router) {
 	r.HandleFunc("/secrets", Secrets).Methods("GET", "POST").Name("Secrets")
 	r.HandleFunc("/keys", Keys).Methods("GET", "POST").Name("Keys")
 	r.HandleFunc("/admin", Admin).Methods("GET", "POST").Name("Admin")
-}
-
-func getNutcrackerCert(api *nutcracker.API) (cert tls.Certificate, err error) {
-	buf, err := api.Post("/secrets/view", nutcracker.NewAPIReq().Set("name", nutcrackerCertName))
-	if err != nil {
-		return
-	}
-	decoded := make([]byte, base64.StdEncoding.DecodedLen(len(buf)-8))
-	n, err := base64.StdEncoding.Decode(decoded, buf[8:])
-
-	decoded = decoded[:n]
-
-	for len(decoded) > 0 {
-		var block *pem.Block
-		block, decoded = pem.Decode(decoded)
-		if block == nil {
-			break
-		}
-
-		if block.Type == "CERTIFICATE" {
-			cert.Certificate = append(cert.Certificate, block.Bytes)
-		}
-
-		if block.Type == "PRIVATE KEY" {
-			cert.PrivateKey, err = parsePrivateKey(block.Bytes)
-			if err != nil {
-				continue
-			}
-		}
-
-	}
-
-	return
-
-}
-
-// Tanke from crypto/x509
-func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
-	if key, err := x509.ParsePKCS1PrivateKey(der); err == nil {
-		return key, nil
-	}
-	if key, err := x509.ParsePKCS8PrivateKey(der); err == nil {
-		switch key := key.(type) {
-		case *rsa.PrivateKey, *ecdsa.PrivateKey:
-			return key, nil
-		default:
-			return nil, errors.New("crypto/tls: found unknown private key type in PKCS#8 wrapping")
-		}
-	}
-	if key, err := x509.ParseECPrivateKey(der); err == nil {
-		return key, nil
-	}
-
-	return nil, errors.New("crypto/tls: failed to parse private key")
 }
 
 func main() {
