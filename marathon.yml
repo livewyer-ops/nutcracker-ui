@@ -30,4 +30,4 @@ healthChecks:
 labels:
   HAPROXY_GROUP: internal
   HAPROXY_0_VHOST: nutcracker-ui.dev.nutmeg.co.uk
-  HAPROXY_0_BACKEND_SERVER_OPTIONS: "server {serverName} {host_ipv4}:{port}{cookieOptions}{healthCheckOptions}{otherOptions} ssl verify none"
+  HAPROXY_0_BACKEND_SERVER_OPTIONS: "  server {serverName} {host_ipv4}:{port}{cookieOptions}{healthCheckOptions}{otherOptions} ssl verify none"
