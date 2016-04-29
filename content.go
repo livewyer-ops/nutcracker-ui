@@ -167,9 +167,6 @@ func Home(w http.ResponseWriter, r *http.Request) {
 
 	if alert != nil {
 		tmplVars["Alert"] = alert
-		tmplVars["Body"].(map[string]interface{})["VaultSealed"] = true
-	} else {
-		tmplVars["Body"].(map[string]interface{})["VaultUnsealed"] = true
 	}
 
 	err := tmpl.ExecuteTemplate(w, "main.html", tmplVars)
@@ -361,6 +358,9 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 
 	if alert != nil {
 		tmplVars["Alert"] = alert
+		tmplVars["Body"].(map[string]interface{})["VaultSealed"] = true
+	} else {
+		tmplVars["Body"].(map[string]interface{})["VaultUnsealed"] = true
 	}
 
 	err = tmpl.ExecuteTemplate(w, "main.html", tmplVars)
