@@ -118,38 +118,6 @@ func Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == "POST" {
-		master := r.FormValue("unseal")
-		switch {
-
-		case r.FormValue("seal") == "1":
-			_, err := nutcracker.NewAPI(nil, nutcrackerServer).Get("/seal")
-			if err != nil {
-				log.Error(err)
-				http.Error(w, "Nutcracker request error", 500)
-				return
-			}
-
-		case len(master) > 1:
-			_, err := nutcracker.NewAPI(&nutcracker.Creds{
-				Username: "master",
-				Password: master,
-			},
-				nutcrackerServer).Get("/unseal")
-			if err != nil {
-				log.Error(err)
-				http.Error(w, "Nutcracker request error", 500)
-				return
-			}
-		}
-
-		// Update metrics to show new state
-		err := metrics.Update()
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
 	m := metrics.Latest()
 	alert := unsealAlert(m)
 
@@ -336,6 +304,9 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 
 		case "addkey":
 			alert, err = addKey(r, creds)
+
+		case "unseal":
+			alert, err = unseal(r, creds)
 
 		default:
 			http.Error(w, "Bad input", 400)
@@ -580,5 +551,34 @@ func addKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, 
 	}
 
 	alert["AlertContent"] = fmt.Sprintf("Created key %s.\n\nsecret: %s", reqBody["name"], result["Key"])
+	return
+}
+
+func unseal(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
+
+	master := r.FormValue("unseal")
+	switch {
+
+	case r.FormValue("seal") == "1":
+		_, err = nutcracker.NewAPI(nil, nutcrackerServer).Get("/seal")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+	case len(master) > 1:
+		_, err = nutcracker.NewAPI(&nutcracker.Creds{
+			Username: "master",
+			Password: master,
+		},
+			nutcrackerServer).Get("/unseal")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
+
+	// Update metrics to show new state
+	err = metrics.Update()
 	return
 }
