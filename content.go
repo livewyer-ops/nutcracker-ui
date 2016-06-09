@@ -521,6 +521,41 @@ func updateSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]st
 	return
 }
 
+func delSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
+
+	alert = make(map[string]string)
+	reqBody := nutcracker.NewAPIReq()
+
+	name := r.FormValue("name")
+	confirm := r.FormValue("confirm")
+
+	if !nameRe.MatchString(name) {
+		alert["AlertContent"] = "Invalid name"
+		return
+	}
+
+	if !nameRe.MatchString(confirm) {
+		alert["AlertContent"] = "Invalid confirmation"
+		return
+	}
+
+	if name != confirm {
+		alert["AlertContent"] = "Name and confirmation do not match"
+		return
+	}
+
+	reqBody.Set("name", strings.TrimSpace(name))
+
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/delete/secret", reqBody)
+	if err != nil {
+		alert["AlertContent"] = "Failed to delete secret"
+	} else {
+		alert["AlertContent"] = fmt.Sprintf("Deleted secret %s", reqBody["name"])
+	}
+
+	return
+}
+
 func addKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
 
 	alert = make(map[string]string)
@@ -551,6 +586,41 @@ func addKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, 
 	}
 
 	alert["AlertContent"] = fmt.Sprintf("Created key %s.\n\nsecret: %s", reqBody["name"], result["Key"])
+	return
+}
+
+func delKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
+
+	alert = make(map[string]string)
+	reqBody := nutcracker.NewAPIReq()
+
+	name := r.FormValue("name")
+	confirm := r.FormValue("confirm")
+
+	if !nameRe.MatchString(name) {
+		alert["AlertContent"] = "Invalid name"
+		return
+	}
+
+	if !nameRe.MatchString(confirm) {
+		alert["AlertContent"] = "Invalid confirmation"
+		return
+	}
+
+	if name != confirm {
+		alert["AlertContent"] = "Name and confirmation do not match"
+		return
+	}
+
+	reqBody.Set("name", strings.TrimSpace(name))
+
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/delete/key", reqBody)
+	if err != nil {
+		alert["AlertContent"] = "Failed to delete key"
+	} else {
+		alert["AlertContent"] = fmt.Sprintf("Deleted key %s", reqBody["name"])
+	}
+
 	return
 }
 
