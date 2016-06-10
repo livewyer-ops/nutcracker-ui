@@ -613,7 +613,7 @@ func delKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, 
 		return
 	}
 
-	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Delete("/secrets/delete/secret/" + name)
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Delete("/secrets/delete/key/" + name)
 	if err != nil {
 		alert["AlertContent"] = "Failed to delete key"
 	} else {
