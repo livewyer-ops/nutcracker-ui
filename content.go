@@ -296,6 +296,9 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 		case "addsecret":
 			alert, err = addSecret(r, creds)
 
+		case "delsecret":
+			alert, err = delSecret(r, creds)
+
 		case "sharesecret":
 			alert, err = shareSecret(r, creds)
 
@@ -304,6 +307,9 @@ func Admin(w http.ResponseWriter, r *http.Request) {
 
 		case "addkey":
 			alert, err = addKey(r, creds)
+
+		case "delkey":
+			alert, err = delKey(r, creds)
 
 		case "unseal":
 			alert, err = unseal(r, creds)
@@ -524,10 +530,9 @@ func updateSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]st
 func delSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
 
 	alert = make(map[string]string)
-	reqBody := nutcracker.NewAPIReq()
 
-	name := r.FormValue("name")
-	confirm := r.FormValue("confirm")
+	name := strings.TrimSpace(r.FormValue("name"))
+	confirm := strings.TrimSpace(r.FormValue("confirm"))
 
 	if !nameRe.MatchString(name) {
 		alert["AlertContent"] = "Invalid name"
@@ -543,14 +548,11 @@ func delSecret(r *http.Request, creds *nutcracker.Creds) (alert map[string]strin
 		alert["AlertContent"] = "Name and confirmation do not match"
 		return
 	}
-
-	reqBody.Set("name", strings.TrimSpace(name))
-
-	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/delete/secret", reqBody)
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Delete("/secrets/delete/secret/" + name)
 	if err != nil {
 		alert["AlertContent"] = "Failed to delete secret"
 	} else {
-		alert["AlertContent"] = fmt.Sprintf("Deleted secret %s", reqBody["name"])
+		alert["AlertContent"] = fmt.Sprintf("Deleted secret %s", name)
 	}
 
 	return
@@ -592,10 +594,9 @@ func addKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, 
 func delKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, err error) {
 
 	alert = make(map[string]string)
-	reqBody := nutcracker.NewAPIReq()
 
-	name := r.FormValue("name")
-	confirm := r.FormValue("confirm")
+	name := strings.TrimSpace(r.FormValue("name"))
+	confirm := strings.TrimSpace(r.FormValue("confirm"))
 
 	if !nameRe.MatchString(name) {
 		alert["AlertContent"] = "Invalid name"
@@ -612,13 +613,11 @@ func delKey(r *http.Request, creds *nutcracker.Creds) (alert map[string]string, 
 		return
 	}
 
-	reqBody.Set("name", strings.TrimSpace(name))
-
-	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Post("/secrets/delete/key", reqBody)
+	_, err = nutcracker.NewAPI(creds, nutcrackerServer).Delete("/secrets/delete/secret/" + name)
 	if err != nil {
 		alert["AlertContent"] = "Failed to delete key"
 	} else {
-		alert["AlertContent"] = fmt.Sprintf("Deleted key %s", reqBody["name"])
+		alert["AlertContent"] = fmt.Sprintf("Deleted key %s", name)
 	}
 
 	return

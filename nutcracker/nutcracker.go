@@ -61,29 +61,7 @@ func (a *API) Get(path string) (response []byte, err error) {
 		return
 	}
 
-	if a.creds != nil {
-		req.Header.Set("X-Secret-ID", a.creds.Username)
-		req.Header.Set("X-Secret-Key", a.creds.Password)
-	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode > 299 {
-		err = errors.New("API Error: " + resp.Status)
-		return
-	}
-
-	response, err = ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-	return
+	return a.request(req)
 }
 
 // Post sends a POST request
@@ -102,6 +80,22 @@ func (a *API) Post(path string, data APIReq) (response []byte, err error) {
 		return
 	}
 
+	return a.request(req)
+}
+
+// Delete sents a DELETE request
+func (a *API) Delete(path string) (response []byte, err error) {
+	a.url.Path = path
+
+	req, err := http.NewRequest("DELETE", a.url.String(), nil)
+	if err != nil {
+		return
+	}
+
+	return a.request(req)
+}
+
+func (a *API) request(req *http.Request) (response []byte, err error) {
 	if a.creds != nil {
 		req.Header.Set("X-Secret-ID", a.creds.Username)
 		req.Header.Set("X-Secret-Key", a.creds.Password)

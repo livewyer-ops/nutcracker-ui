@@ -57,7 +57,9 @@
             <div class="page-header">
                 <h1>Secret administration</h1>
             </div>
+            
             <div class="row">
+                
                 <div class="col-md-6">
                     <h4>Create a secret</h4>
                     <form class="form-horizontal" method="post">
@@ -82,32 +84,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="col-md-6">
-                    <h4>Share a secret</h4>
-                    <form class="form-horizontal" method="post">
-                        {{ .csrfField }}
-                        <div class="form-group">
-                            <label class="col-md-4 control-label" for="textInput-markup">Secret name</label>
-                            <div class="col-md-6">
-                                <input type="text" id="textInput-markup" name="name" class="form-control">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-md-4 control-label" for="textInput-markup">Key name</label>
-                            <div class="col-md-6">
-                                <input type="text" id="textInput-markup" name="key" class="form-control">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-md-6 col-md-offset-4">
-                                <input type="hidden" name="inputtype" value="sharesecret">
-                                <button class="btn btn-primary" type="submit">Submit</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div class="row">
+                
                 <div class="col-md-6">
                     <h4>Update a secret</h4>
                     <form class="form-horizontal" method="post">
@@ -132,6 +109,36 @@
                         </div>
                     </form>
                 </div>
+                
+            </div>
+            
+            <div class="row">
+                
+                <div class="col-md-6">
+                    <h4>Share a secret</h4>
+                    <form class="form-horizontal" method="post">
+                        {{ .csrfField }}
+                        <div class="form-group">
+                            <label class="col-md-4 control-label" for="textInput-markup">Secret name</label>
+                            <div class="col-md-6">
+                                <input type="text" id="textInput-markup" name="name" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-md-4 control-label" for="textInput-markup">Key name</label>
+                            <div class="col-md-6">
+                                <input type="text" id="textInput-markup" name="key" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-6 col-md-offset-4">
+                                <input type="hidden" name="inputtype" value="sharesecret">
+                                <button class="btn btn-primary" type="submit">Submit</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
                 <div class="col-md-6">
                     <h4>Delete a secret</h4>
                     <form class="form-horizontal" method="post">
@@ -157,10 +164,13 @@
                     </form>
                 </div>
             </div>
+            
             <div class="page-header">
                 <h1>Key administration</h1>
             </div>
+            
             <div class="row">
+                
                 <div class="col-md-6">
                     <h4>Create a key</h4>
                     <form class="form-horizontal" method="post">
@@ -193,6 +203,7 @@
                         </div>
                     </form>
                 </div>
+                
                 <div class="col-md-6">
                     <h4>Delete a key</h4>
                     <form class="form-horizontal" method="post">
@@ -217,6 +228,7 @@
                         </div>
                     </form>
                 </div>
+                
             </div>
         </div>
         <!-- /row -->
