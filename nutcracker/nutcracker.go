@@ -79,9 +79,9 @@ func (a *API) Post(path string, data APIReq) (response []byte, err error) {
 	if err != nil {
 		return
 	}
-	pr.Close()
-
-	return a.request(req)
+	defer pr.Close()
+	response, err = a.request(req)
+	return
 }
 
 // Delete sents a DELETE request
