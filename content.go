@@ -378,6 +378,7 @@ func secretTable(url string, c *nutcracker.Creds) (tableHeader []string, tableCo
 			break
 		}
 		list = append(list, recv...)
+		recv = recv[:0]
 	}
 
 	tableHeader = []string{

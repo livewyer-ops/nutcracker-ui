@@ -79,6 +79,7 @@ func (a *API) Post(path string, data APIReq) (response []byte, err error) {
 	if err != nil {
 		return
 	}
+	pr.Close()
 
 	return a.request(req)
 }
@@ -96,6 +97,7 @@ func (a *API) Delete(path string) (response []byte, err error) {
 }
 
 func (a *API) request(req *http.Request) (response []byte, err error) {
+	req.Close = true
 	if a.creds != nil {
 		req.Header.Set("X-Secret-ID", a.creds.Username)
 		req.Header.Set("X-Secret-Key", a.creds.Password)
@@ -110,6 +112,7 @@ func (a *API) request(req *http.Request) (response []byte, err error) {
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode > 299 {
 		err = errors.New("API Error: " + resp.Status)
@@ -117,7 +120,6 @@ func (a *API) request(req *http.Request) (response []byte, err error) {
 	}
 
 	response, err = ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
 	return
 }
 
