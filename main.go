@@ -79,21 +79,6 @@ func main() {
 		Password: nutcrackerKey,
 	}
 
-	api := nutcracker.NewAPI(
-		serverCreds,
-		nutcrackerServer)
-
-	resp, err := api.Post(
-		"/secrets/view",
-		nutcracker.NewAPIReq().Set(
-			"name",
-			nutcrackerCSRFName))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	csrfWrapper = csrf.Protect(resp, csrf.Secure(ssl))
-
 	// Start metric fetcher
 	go updateMetrics()
 
@@ -101,15 +86,29 @@ func main() {
 	addRoutes(r)
 
 	server := new(http.Server)
-	server.Handler = context.ClearHandler(csrfWrapper(r))
 
 	server.ErrorLog = new(stdLog.Logger)
 	server.ErrorLog.SetOutput(ioutil.Discard)
 
 	if ssl {
 
+		api := nutcracker.NewAPI(
+			serverCreds,
+			nutcrackerServer)
+
+		resp, err := api.Post(
+			"/secrets/view",
+			nutcracker.NewAPIReq().Set(
+				"name",
+				nutcrackerCSRFName))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		csrfWrapper = csrf.Protect(resp, csrf.Secure(ssl))
+		server.Handler = context.ClearHandler(csrfWrapper(r))
+
 		var cert tls.Certificate
-		var err error
 
 		if nutcrackerCertName == "" {
 			// Use a self-signed cert
@@ -129,6 +128,7 @@ func main() {
 		server.Serve(sock)
 
 	} else {
+		server.Handler = context.ClearHandler(r)
 		server.Addr = listen
 		server.ListenAndServe()
 	}
